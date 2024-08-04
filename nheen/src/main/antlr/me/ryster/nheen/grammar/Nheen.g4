@@ -1,14 +1,25 @@
 grammar Nheen;
 
 /**
+pacote Principal
+
 inicio
-    x: Inteiro := 2
+    x: Inteiro = 2
     imprima("olá mundo!")
 fim
 **/
 
+
+file
+    : pacote inicio
+    ;
+
 inicio
     : 'inicio' statements 'fim'
+    ;
+
+pacote
+    : 'pacote' ID
     ;
 
 statements
@@ -16,7 +27,7 @@ statements
     ;
 
 statement
-    : decl | builtin
+    : decl | expr
     ;
 
 decl
@@ -32,6 +43,12 @@ tipo
 expr
     : numero
     | texto
+    | ID
+    | functionCall
+    ;
+
+functionCall
+    : ID '(' (expr (',' expr)*)? ')'
     ;
 
 numero
@@ -42,19 +59,21 @@ texto
     : STRING
     ;
 
-builtin
-    : 'imprima' '(' expr ')'
-    | 'leia' '(' ID ')'
-    ;
-
 NUMERO
     : [0-9]+
     ;
 
+// Exemplo: "olá mundo!" e 'olá mundo!'
 STRING
     : '"' ~["]* '"'
+    | '\'' ~[']* '\''
     ;
 
 NEWLINE : [\r\n]+ -> skip ;
 WS : [ \t] -> skip ;
-ID: [a-zA-Z]+ ;
+
+// alphanumeric may include numbers and _
+ID
+    : [a-zA-Z] [a-zA-Z0-9_]*
+    ;
+
