@@ -12,7 +12,7 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-    antlr("org.antlr:antlr4:4.5") // use ANTLR version 4
+    antlr("org.antlr:antlr4:4.9") // use ANTLR version 4
 }
 
 tasks.test {

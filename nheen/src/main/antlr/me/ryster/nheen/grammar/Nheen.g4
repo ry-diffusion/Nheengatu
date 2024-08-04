@@ -1,57 +1,60 @@
 grammar Nheen;
 
-parse
-  :  line* EOF
-  ;
+/**
+inicio
+    x: Inteiro := 2
+    imprima("olá mundo!")
+fim
+**/
 
-line
-  :  Space* (keyValue | LineBreak)
-  ;
+inicio
+    : 'inicio' statements 'fim'
+    ;
 
-keyValue
-  :  key separatorAndValue eol
-  ;
+statements
+    : (statement)*
+    ;
 
-key
-  :  keyChar+
-  ;
+statement
+    : decl | builtin
+    ;
 
-keyChar
-  :  AlphaNum
-  ;
+decl
+    : ID ':' tipo '=' expr
+    ;
 
-separatorAndValue
-  :  (Space | Equals) chars+
-  ;
+tipo
+    : 'Inteiro'
+    | 'Texto'
+    | 'Real'
+    ;
 
-chars
-  :  AlphaNum
-  |  Space
-  |  Equals
-  ;
+expr
+    : numero
+    | texto
+    ;
 
-eol
-  :  LineBreak
-  |  EOF
-  ;
+numero
+    : NUMERO
+    ;
 
-Equals
-  : '='
-  ;
+texto
+    : STRING
+    ;
 
-LineBreak
-  :  '\r'? '\n'
-  |  '\r'
-  ;
+builtin
+    : 'imprima' '(' expr ')'
+    | 'leia' '(' ID ')'
+    ;
 
-Space
-  :  ' '
-  |  '\t'
-  |  '\f'
-  ;
+NUMERO
+    : [0-9]+
+    ;
 
-AlphaNum
-  :  'a'..'z'
-  |  'A'..'Z'
-  |  '0'..'9'
-  ;
+STRING
+    : '"' ~["]* '"'
+    ;
+
+NEWLINE : [\r\n]+ -> skip ;
+WS : [ \t] -> skip ;
+ID: [a-zA-Z]+ ;

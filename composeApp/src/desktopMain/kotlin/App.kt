@@ -13,7 +13,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Preview
 fun App() {
     MaterialTheme {
-        var sourceCode by remember { mutableStateOf("escreva('Olá mundo!')") }
+        var sourceCode by remember { mutableStateOf("inicio\nimprima('Olá mundo!')\nfim") }
         var fileName by remember { mutableStateOf("Principal.nhe") }
 
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
