@@ -19,7 +19,7 @@ inicio
     ;
 
 pacote
-    : 'pacote' ID
+    : 'pacote' Identifier
     ;
 
 statements
@@ -31,7 +31,7 @@ statement
     ;
 
 decl
-    : ID ':' tipo '=' expr
+    : Identifier ':' tipo '=' expr
     ;
 
 tipo
@@ -43,28 +43,32 @@ tipo
 expr
     : numero
     | texto
-    | ID
+    | variableReference
     | functionCall
     ;
 
 functionCall
-    : ID '(' (expr (',' expr)*)? ')'
+    : Identifier '(' (expr (',' expr)*)? ')'
     ;
 
 numero
-    : NUMERO
+    : Number
     ;
 
 texto
-    : STRING
+    : Text
     ;
 
-NUMERO
+variableReference
+    : Identifier
+    ;
+
+Number
     : [0-9]+
     ;
 
 // Exemplo: "olá mundo!" e 'olá mundo!'
-STRING
+Text
     : '"' ~["]* '"'
     | '\'' ~[']* '\''
     ;
@@ -73,7 +77,6 @@ NEWLINE : [\r\n]+ -> skip ;
 WS : [ \t] -> skip ;
 
 // alphanumeric may include numbers and _
-ID
+Identifier
     : [a-zA-Z] [a-zA-Z0-9_]*
     ;
-

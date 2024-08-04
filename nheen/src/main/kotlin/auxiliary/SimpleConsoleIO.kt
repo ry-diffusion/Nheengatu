@@ -1,4 +1,4 @@
-package me.ryster.nheen.auxiliar
+package me.ryster.nheen.auxiliary
 
 import me.ryster.nheen.runtime.core.ConsoleIO
 
