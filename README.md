@@ -11,7 +11,7 @@ O objetivo dessa linguagem é ser uma linguagem de programação simples e fáci
 ```nheengatu
 pacote Principal
 inicio
-escreva("Olá, mundo!")
+ imprima("Olá, mundo!")
 fim
 ```
 
