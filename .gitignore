@@ -1,4 +1,5 @@
 *.iml
+test.class
 .kotlin
 .gradle
 **/build/
