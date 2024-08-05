@@ -16,7 +16,7 @@ fun main() {
          pacote Principal
          
          inicio
-            texto: Inteiro = 69
+            texto: Texto = "Olá mundo!" 
             imprima(texto)
          fim
         """.trimIndent()
@@ -40,10 +40,11 @@ fun main() {
     val principalJavaRepr = codegen.transformFromIR(principal, "Principal")
     val nheenClassLoader = NheenClassLoader()
 
-    var f = File("test.class")
+    val f = File("test.class")
     val bytes = principalJavaRepr.toBytecode()
     f.writeBytes(bytes)
     println("Escrito em: ${f.absolutePath}")
+
 
     val principalClass = nheenClassLoader.loadClass("nheen.code.Principal", bytes)
     principalClass.getDeclaredMethod("inicio").invoke(principalClass.newInstance())

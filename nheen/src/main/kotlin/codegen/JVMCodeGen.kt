@@ -7,6 +7,7 @@ import javassist.bytecode.CodeAttribute
 import javassist.bytecode.CodeIterator
 import javassist.bytecode.ConstPool
 import javassist.bytecode.Mnemonic
+import javassist.bytecode.Opcode
 import me.ryster.nheen.ir.Instruction
 
 class JVMCodeGen(private val packageName: String) {
@@ -33,22 +34,36 @@ class JVMCodeGen(private val packageName: String) {
                         }
 
                         is Instruction.SimpleValue.Texto -> {
-//                            src += CodeAttribute.ALOAD_0
-//                            src += CodeAttribute.LDC
-//                            src += constPool.addStringInfo(newItem.value)
+                            src += CodeAttribute.LDC
+                            src += constPool.addStringInfo(newItem.value)
+
+                            src += CodeAttribute.ASTORE
+                            src += currentLocalIdx
+                            variableMap[instruction.variable] = currentLocalIdx++
                         }
                     }
                 }
 
                 is Instruction.Call -> {
-                    println("Call UNIMPLEMENTED")
+                    // me.ryster.nheen.runtime.language
+                    val console = constPool.addClassInfo("me/ryster/nheen/runtime/language/Console");
+                    val methodIdx = constPool.addMethodrefInfo(
+                        console,
+                        instruction.function,
+                        "(Ljava/lang/String;)V"
+                    )
+
+
+                    src += Opcode.INVOKESTATIC
+                    src += (methodIdx shr 8)
+                    src += methodIdx
                 }
 
                 is Instruction.PushValue -> {
                     when (val value = instruction.value) {
                         is Instruction.SimpleValue.Inteiro -> {
-                            src += CodeAttribute.BIPUSH
-                            src += value.value
+                            src += CodeAttribute.LDC
+                            src += constPool.addIntegerInfo(value.value)
                         }
 
                         is Instruction.SimpleValue.Texto -> {
@@ -59,9 +74,9 @@ class JVMCodeGen(private val packageName: String) {
                 }
 
                 is Instruction.PushVariable -> {
-//                    val idx = variableMap[instruction.variable]!!
-//                    src += CodeAttribute.ALOAD
-//                    src += idx
+                    val idx = variableMap[instruction.variable]!!
+                    src += CodeAttribute.ALOAD
+                    src += idx
                 }
 
                 Instruction.ReturnVoid -> {
@@ -88,6 +103,11 @@ class JVMCodeGen(private val packageName: String) {
         val constPool = methodInfo.constPool
         val src = transformIrToByteCode(ir, constPool)
 
+
+        methodInfo.setSuperclass("java/lang/Object")
+        constPool.classNames.add("java/lang/Object")
+        constPool.classNames.add("me/ryster/nheen/runtime/language/Console")
+
         val codeAttr = CodeAttribute(
             constPool, 4096 * 2, currentLocalIdx,
             src, methodInfo.codeAttribute.exceptionTable
@@ -100,11 +120,4 @@ class JVMCodeGen(private val packageName: String) {
 
         return klass
     }
-}
-
-private operator fun CodeIterator.plus(value: Int): CodeIterator? {
-    this.append(ByteArray(1).apply {
-        this[0] = value.toByte()
-    })
-    return this
 }

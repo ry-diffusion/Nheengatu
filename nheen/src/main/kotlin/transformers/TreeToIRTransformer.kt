@@ -55,7 +55,7 @@ class TreeToIRTransformer {
                 val args = mutableListOf<Instruction.Register>()
 
                 elem.expr().forEach {
-                   when (it.getChild(0)) {
+                    when (it.getChild(0)) {
                         is NheenParser.NumeroContext -> {
                             println(" --> Processando argumento: (NUMERO) ${it.text}")
                             val register = Instruction.Register.Variable(registerIdx)
@@ -64,15 +64,17 @@ class TreeToIRTransformer {
                             args.add(register)
                         }
 
-                        is NheenParser.TextoContext-> {
-                            println(" --> Processando argumento: (TEXTO) ${it.text}")
+                        is NheenParser.TextoContext -> {
+                            var text = it.text
+                            text = text.substring(1, text.length - 1)
+                            println(" --> Processando argumento: (TEXTO) $text")
                             val register = Instruction.Register.Variable(registerIdx)
-                            ir += Instruction.PushValue(register, Instruction.SimpleValue.Texto(it.text))
+                            ir += Instruction.PushValue(register, Instruction.SimpleValue.Texto(text))
                             registerIdx++
                             args.add(register)
                         }
 
-                       is NheenParser.VariableReferenceContext -> {
+                        is NheenParser.VariableReferenceContext -> {
                             println(" --> Processando argumento: (VARIABLE_REFERENCE) ${it.text}")
                             val register = Instruction.Register.Variable(registerIdx)
                             ir += Instruction.PushVariable(register, it.text)
@@ -110,8 +112,10 @@ class TreeToIRTransformer {
             }
 
             is NheenParser.TextoContext -> {
-                println(" --> Processando declaração: (TEXTO) $name = ${value.text}")
-                ir += Instruction.Assign(name, Instruction.SimpleValue.Texto(value.text))
+                var text = value.text
+                text = text.substring(1, text.length - 1)
+                println(" --> Processando declaração: (TEXTO) $name = $text")
+                ir += Instruction.Assign(name, Instruction.SimpleValue.Texto(text))
             }
 
             else -> {

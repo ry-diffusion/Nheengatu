@@ -6,6 +6,7 @@ lateinit var consoleIO: ConsoleIO
 
 class Console {
     companion object {
+        @JvmStatic
         fun imprima(texto: String) {
             consoleIO.writeText(texto)
         }
