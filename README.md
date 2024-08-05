@@ -9,26 +9,29 @@ O objetivo dessa linguagem é ser uma linguagem de programação simples e fáci
 
 ### Olá mundo!
 ```nheengatu
+pacote Principal
+inicio
 escreva("Olá, mundo!")
+fim
 ```
 
 ### Soma de dois valores
 
 ```nheengatu
-a := ler_numero("Digite o primeiro número: ")
-b := ler_numero("Digite o segundo número: ")
-soma := a + b
-escreva("A soma dos dois números é: {} ", soma)
+a = ler_numero("Digite o primeiro número: ")
+b = ler_numero("Digite o segundo número: ")
+soma = a + b
+imprima("A soma dos dois números é: {} ", soma)
 ```
 
 
 ### Classificar idade
  ```nheengatu
-idade := ler_numero("Digite a idade: ") 
+idade = ler_numero("Digite a idade: ") 
 se (idade < 18)
-   escreva("Menor de idade")
+   imprima("Menor de idade")
 senão 
-   escreva("Maior de idade")
+   imprima("Maior de idade")
 fim
  ```
 
