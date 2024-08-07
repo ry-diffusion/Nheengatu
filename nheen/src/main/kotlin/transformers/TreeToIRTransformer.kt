@@ -2,6 +2,8 @@ package me.ryster.nheen.transformers
 
 import me.ryster.nheen.grammar.NheenParser
 import me.ryster.nheen.ir.Instruction
+import me.ryster.nheen.ir.Literal.*
+import me.ryster.nheen.ir.Value
 import org.antlr.v4.runtime.tree.ParseTree
 
 class TreeToIRTransformer {
@@ -10,24 +12,25 @@ class TreeToIRTransformer {
     fun transformTree(tree: NheenParser.FileContext) {
         val ir: Ir = mutableListOf()
         val pkg = tree.pacote()
-        val pkgName = pkg.Identifier().text
-        println("--> Processando pacote $pkgName")
+        val packageName = pkg.Identifier().text
+        println("--> Processando pacote $packageName")
 
         val inicio = tree.inicio()
         println(" -> Processando bloco de início")
         val instructions = inicio.statements()
 
         instructions.children.forEach {
-            transformChild(it, ir)
+            transformChild(packageName, it, ir)
         }
 
         ir += Instruction.ReturnVoid
 
         println(" -> Processamento do bloco de início concluído")
-        packages += Pair(pkgName, ir)
+        packages += Pair(packageName, ir)
     }
 
     private fun transformChild(
+        packageName: String,
         it: ParseTree,
         ir: Ir
     ) {
@@ -37,7 +40,7 @@ class TreeToIRTransformer {
             }
 
             is NheenParser.ExprContext -> {
-                transformExpression(ir, it, child)
+                transformExpression(packageName, ir, it, child)
             }
 
             else -> {
@@ -46,40 +49,40 @@ class TreeToIRTransformer {
         }
     }
 
-    private fun transformExpression(ir: Ir, it: ParseTree, child: ParseTree) {
-        var registerIdx = 0
+    private fun transformExpression(packageName: String, ir: Ir, it: ParseTree, child: ParseTree) {
         println(" --> Processando expressão: ${it.text}")
+
         when (val elem = child.getChild(0)) {
             is NheenParser.FunctionCallContext -> {
                 val callable = elem.Identifier()
-                val args = mutableListOf<Instruction.Register>()
+                val args = mutableListOf<Value>()
 
                 elem.expr().forEach {
                     when (it.getChild(0)) {
                         is NheenParser.NumeroContext -> {
                             println(" --> Processando argumento: (NUMERO) ${it.text}")
-                            val register = Instruction.Register.Variable(registerIdx)
-                            ir += Instruction.PushValue(register, Instruction.SimpleValue.Inteiro(it.text.toInt()))
-                            registerIdx++
-                            args.add(register)
+                            args.add(
+                                Value.Raw(
+                                    Inteiro(it.text.toInt())
+                                )
+                            )
                         }
 
                         is NheenParser.TextoContext -> {
-                            var text = it.text
-                            text = text.substring(1, text.length - 1)
+                            val text = it.text.substring(1, it.text.length - 1)
                             println(" --> Processando argumento: (TEXTO) $text")
-                            val register = Instruction.Register.Variable(registerIdx)
-                            ir += Instruction.PushValue(register, Instruction.SimpleValue.Texto(text))
-                            registerIdx++
-                            args.add(register)
+                            args.add(
+                                Value.Raw(
+                                    Texto(text)
+                                )
+                            )
                         }
 
                         is NheenParser.VariableReferenceContext -> {
-                            println(" --> Processando argumento: (VARIABLE_REFERENCE) ${it.text}")
-                            val register = Instruction.Register.Variable(registerIdx)
-                            ir += Instruction.PushVariable(register, it.text)
-                            registerIdx++
-                            args.add(register)
+                            println(" --> Processando argumento: (VARIAVEL) ${it.text}")
+                            args.add(
+                                Value.Variable(it.text)
+                            )
                         }
 
                         else -> {
@@ -89,7 +92,7 @@ class TreeToIRTransformer {
                 }
 
                 println(" --> Processando chamada de função: ${callable.text}")
-                ir += Instruction.Call(callable.text, args)
+                ir += Instruction.Call(packageName, callable.text, args)
             }
 
             else -> {
@@ -108,14 +111,14 @@ class TreeToIRTransformer {
         when (value.getChild(0)) {
             is NheenParser.NumeroContext -> {
                 println(" --> Processando declaração: (NUMERO) $name = ${value.text}")
-                ir += Instruction.Assign(name, Instruction.SimpleValue.Inteiro(value.text.toInt()))
+                ir += Instruction.Assign(name, Inteiro(value.text.toInt()))
             }
 
             is NheenParser.TextoContext -> {
                 var text = value.text
                 text = text.substring(1, text.length - 1)
                 println(" --> Processando declaração: (TEXTO) $name = $text")
-                ir += Instruction.Assign(name, Instruction.SimpleValue.Texto(text))
+                ir += Instruction.Assign(name, Texto(text))
             }
 
             else -> {
