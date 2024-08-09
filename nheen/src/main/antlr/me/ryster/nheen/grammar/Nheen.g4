@@ -35,38 +35,40 @@ decl
     ;
 
 expr
-    : numero
-    | texto
-    | variableReference
+    : value
+    | operatorChain
+    ;
+
+
+operatorChain
+    : value operator value (operator value)*
+    ;
+
+value
+    : numberLiteral
     | functionCall
-    | binaryOperationChain
-    ;
-
-binaryOperationChain
-    : simpleExpr (op simpleExpr)*
-    ;
-
-simpleExpr
-    : numero
-    | texto
+    | textLiteral
     | variableReference
-    | functionCall
+    | expressionParen
     ;
 
-op
-    : '+' | '-' | '*' | '/' | '==' | '!=' | '<' | '<=' | '>' | '>='
+expressionParen
+    : '(' expr ')'
     ;
 
+operator
+    : '!' | '+' | '-' | '*' | '/' | '==' | '!=' | '<' | '<=' | '>' | '>='
+    ;
 
 functionCall
     : Identifier '(' (expr (',' expr)*)? ')'
     ;
 
-numero
+numberLiteral
     : Number
     ;
 
-texto
+textLiteral
     : Text
     ;
 
