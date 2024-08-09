@@ -91,6 +91,8 @@ class JvmIrTransformer(
         src: MutableList<JvmIr>
     ) {
         when (it) {
+            is Value.OperationChain ->
+                TODO("$it")
             is Value.Raw -> {
                 transformLiteral(it.literal, src)
             }

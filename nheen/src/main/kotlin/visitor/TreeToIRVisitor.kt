@@ -51,7 +51,6 @@ class TreeToIRVisitor : NheenBaseVisitor<Unit>() {
     }
 
 
-
     private fun toValue(literal: NheenParser.TextLiteralContext): Value.Raw {
         val text = literal.text.substring(1, literal.text.length - 1)
         println(" --> Processando valor: (TEXTO) $text")
@@ -63,29 +62,62 @@ class TreeToIRVisitor : NheenBaseVisitor<Unit>() {
         return Value.Raw(Inteiro(literal.text.toInt()))
     }
 
+    fun parseOperation(ctx: NheenParser.OperatorChainContext?): Operation {
+        val left = convertValue(ctx!!.value(0))
+
+        var lastOperation: Operation? = null
+        ctx.operator().forEachIndexed { index, op ->
+
+            val operator = op.text
+            val operand = convertValue(ctx.value(index + 1))
+
+            val op = when (operator) {
+                "+" -> Operation.Plus(left, operand)
+                "-" -> Operation.Minus(left, operand)
+                "*" -> Operation.Multiply(left, operand)
+                "/" -> Operation.Divide(left, operand)
+                else -> TODO("Unsupported Operation")
+            }
+
+
+            if (null != lastOperation) {
+                val leftOperand = Value.OperationChain(lastOperation!!)
+
+                lastOperation = when (operator) {
+                    "+" -> Operation.Plus(leftOperand, operand)
+                    "-" -> Operation.Minus(leftOperand, operand)
+                    "*" -> Operation.Multiply(leftOperand, operand)
+                    "/" -> Operation.Divide(leftOperand, operand)
+                    else -> throw Error("Operação não suportada: $operator")
+                }
+            } else {
+                lastOperation = op
+            }
+        }
+
+        return lastOperation!!
+    }
+
     private fun toValue(variable: NheenParser.VariableReferenceContext): Value.Variable {
         println(" --> Processando valor: (VARIAVEL) ${variable.text}")
         return Value.Variable(variable.text)
     }
 
+    private fun convertValue(ctx: NheenParser.ValueContext): Value = when (val valueChild = ctx.getChild(0)) {
+        is NheenParser.TextLiteralContext -> toValue(valueChild)
+        is NheenParser.NumberLiteralContext -> toValue(valueChild)
+        is NheenParser.VariableReferenceContext -> toValue(valueChild)
+        is NheenParser.ExpressionParenContext -> parseValue(valueChild.expr())
+        is NheenParser.OperatorChainContext ->
+            Value.OperationChain(parseOperation(valueChild))
 
-    private fun parseValue(ctx: NheenParser.ExprContext): Value {
-        return when (val child = ctx.getChild(0)) {
-            is NheenParser.ValueContext -> {
-                when (val valueChild = child.getChild(0)) {
-                    is NheenParser.TextLiteralContext -> toValue(valueChild)
-                    is NheenParser.NumberLiteralContext -> toValue(valueChild)
-                    is NheenParser.VariableReferenceContext -> toValue(valueChild)
+        else -> throw Error("Tipo de valor não suportado: ${valueChild::class}")
+    }
 
-                    else -> throw Error("Tipo de valor não suportado: ${valueChild::class}")
-                }
-            }
 
-            is NheenParser.OperatorChainContext -> {
-                TODO()
-            }
-
-            else -> throw Error("Tipo de contexto não suportado: ${child::class}")
-        }
+    private fun parseValue(ctx: NheenParser.ExprContext): Value = when (val child = ctx.getChild(0)) {
+        is NheenParser.ValueContext -> convertValue(child)
+        is NheenParser.OperatorChainContext -> Value.OperationChain(parseOperation(child))
+        else -> throw Error("Tipo de contexto não suportado: ${child::class}")
     }
 }

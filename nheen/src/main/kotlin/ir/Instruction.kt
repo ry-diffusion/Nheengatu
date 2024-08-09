@@ -12,6 +12,7 @@ sealed class Instruction {
         val arguments: List<Value>,
     ) : Instruction()
 
+
     data object ReturnVoid : Instruction()
 }
 

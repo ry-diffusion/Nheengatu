@@ -17,7 +17,7 @@ fun main() {
          pacote Principal
          
          inicio
-            y := 2 
+            y := 2 + 2 + 2
             imprima(y)
          fim
         """.trimIndent()
