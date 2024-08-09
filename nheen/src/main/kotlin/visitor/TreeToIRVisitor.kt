@@ -62,39 +62,56 @@ class TreeToIRVisitor : NheenBaseVisitor<Unit>() {
         return Value.Raw(Inteiro(literal.text.toInt()))
     }
 
-    fun parseOperation(ctx: NheenParser.OperatorChainContext?): Operation {
-        val left = convertValue(ctx!!.value(0))
-        var lastOperation: Operation? = null
+    private fun parseOperation(ctx: NheenParser.OperatorChainContext?): Operation {
+        val precedence = mapOf(
+            "+" to 1,
+            "-" to 1,
+            "*" to 2,
+            "/" to 2
+        )
 
-        ctx.operator().forEachIndexed { index, op ->
-            val operator = op.text
-            val operand = convertValue(ctx.value(index + 1))
+        val output = mutableListOf<Any>()
+        val operators = mutableListOf<String>()
 
-            val operation = when (operator) {
-                "+" -> Operation.Plus(left, operand)
-                "-" -> Operation.Minus(left, operand)
-                "*" -> Operation.Multiply(left, operand)
-                "/" -> Operation.Divide(left, operand)
-                else -> TODO("Unsupported Operation")
-            }
+        val values = ctx!!.value()
+        val operatorsCtx = ctx.operator()
 
-
-            if (null != lastOperation) {
-                val leftOperand = Value.OperationChain(lastOperation!!)
-
-                lastOperation = when (operator) {
-                    "+" -> Operation.Plus(leftOperand, operand)
-                    "-" -> Operation.Minus(leftOperand, operand)
-                    "*" -> Operation.Multiply(leftOperand, operand)
-                    "/" -> Operation.Divide(leftOperand, operand)
-                    else -> throw Error("Operação não suportada: $operator")
+        for (i in values.indices) {
+            output.add(convertValue(values[i]))
+            if (i < operatorsCtx.size) {
+                val op = operatorsCtx[i].text
+                while (operators.isNotEmpty() && precedence[operators.last()]!! >= precedence[op]!!) {
+                    output.add(operators.removeAt(operators.size - 1))
                 }
-            } else {
-                lastOperation = operation
+                operators.add(op)
             }
         }
 
-        return lastOperation!!
+        while (operators.isNotEmpty()) {
+            output.add(operators.removeAt(operators.size - 1))
+        }
+
+        val stack = mutableListOf<Value>()
+
+        for (token in output) {
+            when (token) {
+                is Value -> stack.add(token)
+                is String -> {
+                    val right = stack.removeAt(stack.size - 1)
+                    val left = stack.removeAt(stack.size - 1)
+                    val operation = when (token) {
+                        "+" -> Operation.Plus(left, right)
+                        "-" -> Operation.Minus(left, right)
+                        "*" -> Operation.Multiply(left, right)
+                        "/" -> Operation.Divide(left, right)
+                        else -> throw Error("Unsupported Operation: $token")
+                    }
+                    stack.add(Value.OperationChain(operation))
+                }
+            }
+        }
+
+        return (stack[0] as Value.OperationChain).operation
     }
 
     private fun toValue(variable: NheenParser.VariableReferenceContext): Value.Variable {

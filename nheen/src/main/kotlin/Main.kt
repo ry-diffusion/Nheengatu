@@ -18,8 +18,7 @@ fun main() {
          pacote Principal
          
          inicio
-            x := 2 + 2 + 2
-            
+            x := 5 + (10 * 2) / 2
             imprima("O valor de x é: " + x)
             
             imprima("*")
