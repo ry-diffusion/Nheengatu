@@ -36,7 +36,7 @@ class TreeToIRTransformer {
     ) {
         when (val child = it.getChild(0)) {
             is NheenParser.DeclContext -> {
-                transformDeclaration(child, ir)
+                transformDeclaration(packageName, child, ir)
             }
 
             is NheenParser.ExprContext -> {
@@ -54,45 +54,7 @@ class TreeToIRTransformer {
 
         when (val elem = child.getChild(0)) {
             is NheenParser.FunctionCallContext -> {
-                val callable = elem.Identifier()
-                val args = mutableListOf<Value>()
-
-                elem.expr().forEach {
-                    when (it.getChild(0)) {
-                        is NheenParser.NumeroContext -> {
-                            println(" --> Processando argumento: (NUMERO) ${it.text}")
-                            args.add(
-                                Value.Raw(
-                                    Inteiro(it.text.toInt())
-                                )
-                            )
-                        }
-
-                        is NheenParser.TextoContext -> {
-                            val text = it.text.substring(1, it.text.length - 1)
-                            println(" --> Processando argumento: (TEXTO) $text")
-                            args.add(
-                                Value.Raw(
-                                    Texto(text)
-                                )
-                            )
-                        }
-
-                        is NheenParser.VariableReferenceContext -> {
-                            println(" --> Processando argumento: (VARIAVEL) ${it.text}")
-                            args.add(
-                                Value.Variable(it.text)
-                            )
-                        }
-
-                        else -> {
-                            throw Error("(ARGUMENTO NÃO SUPORTADO!) ${it.text} (${it.ruleContext.text}")
-                        }
-                    }
-                }
-
-                println(" --> Processando chamada de função: ${callable.text}")
-                ir += Instruction.Call(packageName, callable.text, args)
+                transformFunctionCall(elem, ir, packageName)
             }
 
             else -> {
@@ -101,13 +63,60 @@ class TreeToIRTransformer {
         }
     }
 
+    private fun transformFunctionCall(
+        elem: NheenParser.FunctionCallContext,
+        ir: Ir,
+        packageName: String
+    ) {
+        val callable = elem.Identifier()
+        val args = mutableListOf<Value>()
+
+        elem.expr().forEach {
+            when (it.getChild(0)) {
+                is NheenParser.NumeroContext -> {
+                    println(" --> Processando argumento: (NUMERO) ${it.text}")
+                    args.add(
+                        Value.Raw(
+                            Inteiro(it.text.toInt())
+                        )
+                    )
+                }
+
+                is NheenParser.TextoContext -> {
+                    val text = it.text.substring(1, it.text.length - 1)
+                    println(" --> Processando argumento: (TEXTO) $text")
+                    args.add(
+                        Value.Raw(
+                            Texto(text)
+                        )
+                    )
+                }
+
+                is NheenParser.VariableReferenceContext -> {
+                    println(" --> Processando argumento: (VARIAVEL) ${it.text}")
+                    args.add(
+                        Value.Variable(it.text)
+                    )
+                }
+
+                else -> {
+                    throw Error("(ARGUMENTO NÃO SUPORTADO!) ${it.text} (${it.ruleContext.text}")
+                }
+            }
+        }
+
+        println(" --> Processando chamada de função: ${callable.text}")
+        ir += Instruction.Call(packageName, callable.text, args)
+    }
+
     private fun transformDeclaration(
+        packageName: String,
         child: NheenParser.DeclContext,
         ir: Ir
     ) {
         val name = child.Identifier().text
         val value = child.expr()
-        when (value.getChild(0)) {
+        when (val it = value.getChild(0)) {
             is NheenParser.NumeroContext -> {
                 println(" --> Processando declaração: (NUMERO) $name = ${value.text}")
                 ir += Instruction.Assign(name, Value.Raw(Inteiro(value.text.toInt())))
@@ -123,6 +132,16 @@ class TreeToIRTransformer {
             is NheenParser.VariableReferenceContext -> {
                 println(" --> Processando declaração: (VARIAVEL) $name = ${value.text}")
                 ir += Instruction.Assign(name, Value.Variable(value.text))
+            }
+
+            is NheenParser.FunctionCallContext -> {
+                println(" --> Processando declaração: (CHAMADA DE FUNÇÃO) $name = ${value.text}")
+                transformFunctionCall(it, ir, packageName)
+                val call = ir.removeLast()
+                if (call !is Instruction.Call) {
+                    throw Error("Última instrução não é uma chamada de função!")
+                }
+                ir += Instruction.Assign(name, Value.FunctionCall(call))
             }
 
             else -> {

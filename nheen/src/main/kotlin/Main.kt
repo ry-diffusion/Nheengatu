@@ -17,15 +17,10 @@ fun main() {
          pacote Principal
          
          inicio
-            a := "Olá mundo!" 
-            b := 2
-            b := a
-            a := 5
-            a := b
+            imprima("Digite um inteiro: ")
+            b := lerInteiro()
             
-            imprima("==== O valor de a === ")
-            imprima(a)
-            imprima("==== O valor de b === ")
+            imprima("você escreveu: ")
             imprima(b)
          fim
         """.trimIndent()

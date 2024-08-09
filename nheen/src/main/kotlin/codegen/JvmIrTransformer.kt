@@ -30,51 +30,12 @@ class JvmIrTransformer(
                     }
 
 
-                    when (val value = instruction.value) {
-                        is Value.Raw -> {
-                            transformLiteral(value.literal, src)
-                        }
-
-                        is Value.Variable -> {
-                            val id = variables[value.name]!!
-                            src += JvmIr.LoadReference(id)
-                        }
-                    }
-
+                    transformValue(instruction.value, src)
                     src += JvmIr.StoreReference(id)
-
                 }
 
                 is Instruction.Call -> {
-                    instruction.arguments.forEach {
-                        when (it) {
-                            is Value.Raw -> {
-                                transformLiteral(it.literal, src)
-                            }
-
-                            is Value.Variable -> {
-                                val id = variables[it.name]!!
-                                src += JvmIr.LoadReference(id)
-                            }
-                        }
-                    }
-
-                    val className = when (instruction.function) {
-                        "imprima" -> Console::class.java
-                        else -> throw IllegalArgumentException("Unknown function: ${instruction.function}")
-                    }
-                    val targetFunction = when (instruction.function) {
-                        "imprima" -> "imprima"
-                        else -> throw IllegalArgumentException("Unknown function: ${instruction.function}")
-                    }
-
-                    val obj = RuntimeObject::class.java.name.replace(".", "/")
-                    src += JvmIr.StaticCall(
-                        className.name,
-                        targetFunction,
-                        "(L$obj;)V",
-                        emptyList()
-                    )
+                    transformCall(instruction, src)
                 }
 
                 Instruction.ReturnVoid -> {
@@ -84,6 +45,65 @@ class JvmIrTransformer(
         }
 
         return src
+    }
+
+    private fun transformCall(
+        instruction: Instruction.Call,
+        src: MutableList<JvmIr>
+    ) {
+        instruction.arguments.forEach {
+            transformValue(it, src)
+        }
+
+        val className = when (instruction.function) {
+            "imprima" -> Console::class.java
+            "lerInteiro" -> Console::class.java
+            else -> throw IllegalArgumentException("Unknown function: ${instruction.function}")
+        }
+
+        val targetFunction = when (instruction.function) {
+            "imprima" -> "imprima"
+            "lerInteiro" -> "lerInteiro"
+            else -> throw IllegalArgumentException("Unknown function: ${instruction.function}")
+        }
+
+        val obj = RuntimeObject::class.java.name.replace(".", "/")
+        if (instruction.function == "imprima") {
+            src += JvmIr.StaticCall(
+                className.name,
+                targetFunction,
+                "(L$obj;)V",
+                emptyList()
+            )
+            return
+        } else {
+            src += JvmIr.StaticCall(
+                className.name,
+                targetFunction,
+                "()L$obj;",
+                emptyList()
+            )
+        }
+    }
+
+    private fun transformValue(
+        it: Value,
+        src: MutableList<JvmIr>
+    ) {
+        when (it) {
+            is Value.Raw -> {
+                transformLiteral(it.literal, src)
+            }
+
+            is Value.Variable -> {
+                val id = variables[it.name]!!
+                src += JvmIr.LoadReference(id)
+            }
+
+            is Value.FunctionCall -> {
+                transformCall(it.instruction, src)
+            }
+        }
     }
 
     private fun transformLiteral(
