@@ -131,7 +131,7 @@ class JvmCodeGen(private val packageName: String) {
         ir.forEach {
             when (it) {
                 is JvmIr.InvokeSpecial -> {
-                    val klass = constPool.addClassInfo(it.className.name)
+                    val klass = constPool.addClassInfo(it.className)
                     src += Opcode.INVOKESPECIAL
                     val methodIdx = constPool.addMethodrefInfo(
                         klass,
@@ -144,7 +144,7 @@ class JvmCodeGen(private val packageName: String) {
                 }
 
                 is JvmIr.InvokeVirtual -> {
-                    val klass = constPool.addClassInfo(it.className.name)
+                    val klass = constPool.addClassInfo(it.className)
                     src += Opcode.INVOKEVIRTUAL
                     val methodIdx = constPool.addMethodrefInfo(
                         klass,

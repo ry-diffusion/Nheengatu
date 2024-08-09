@@ -10,9 +10,8 @@ import me.ryster.nheen.runtime.language.core.objects.TextoObject
 import me.ryster.nheen.runtime.language.io.Console
 
 class JvmIrTransformer(
-    val packageName: String,
-    val functionName: String,
-    val ir: List<Instruction>
+    private val callResolver: JvmCallResolver,
+    private val ir: List<Instruction>
 ) {
     private var variables = mutableMapOf<String, Int>()
     private var currentVariableIdx: Int = 1
@@ -56,58 +55,17 @@ class JvmIrTransformer(
             transformValue(it, src)
         }
 
-        val className = when (instruction.function) {
-            "imprima" -> Console::class.java
-            "lerInteiro" -> Console::class.java
-            else -> throw IllegalArgumentException("Unknown function: ${instruction.function}")
-        }
-
-        val targetFunction = when (instruction.function) {
-            "imprima" -> "imprima"
-            "lerInteiro" -> "lerInteiro"
-            else -> throw IllegalArgumentException("Unknown function: ${instruction.function}")
-        }
-
-        val obj = RuntimeObject::class.java.name.replace(".", "/")
-        if (instruction.function == "imprima") {
-            src += JvmIr.StaticCall(
-                className.name,
-                targetFunction,
-                "(L$obj;)V",
-                emptyList()
-            )
-            return
-        } else {
-            src += JvmIr.StaticCall(
-                className.name,
-                targetFunction,
-                "()L$obj;",
-                emptyList()
-            )
-        }
+        src += callResolver.resolve(instruction.function)
     }
 
     private fun transformOperation(
         operation: Operation,
         src: MutableList<JvmIr>
     ) {
-        val obj = RuntimeObject::class.java.name.replace(".", "/")
-        when (operation) {
-            is Operation.Plus -> {
-                transformValue(operation.left, src)
-                transformValue(operation.right, src)
-                src += JvmIr.InvokeVirtual(
-                    RuntimeObject::class.java,
-                    "plus",
-                    "(L$obj;)L$obj;",
-                    emptyList()
-                )
-            }
+        transformValue(operation.left, src)
+        transformValue(operation.right, src)
 
-            is Operation.Divide -> TODO()
-            is Operation.Minus -> TODO()
-            is Operation.Multiply -> TODO()
-        }
+        src += callResolver.resolveOperation(operation)
     }
 
 
@@ -144,7 +102,7 @@ class JvmIrTransformer(
                 src += JvmIr.NewObject(InteiroObject::class.java)
                 src += JvmIr.PushInt(literal.value)
                 src += JvmIr.InvokeSpecial(
-                    InteiroObject::class.java,
+                    InteiroObject::class.java.canonicalName,
                     "<init>",
                     "(I)V",
                     emptyList()
@@ -155,7 +113,7 @@ class JvmIrTransformer(
                 src += JvmIr.NewObject(TextoObject::class.java)
                 src += JvmIr.PushString(literal.value)
                 src += JvmIr.InvokeSpecial(
-                    TextoObject::class.java,
+                    TextoObject::class.java.name,
                     "<init>",
                     "(Ljava/lang/String;)V",
                     emptyList()

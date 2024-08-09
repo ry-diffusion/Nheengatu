@@ -1,23 +1,24 @@
 package me.ryster.nheen.ir
 
 sealed class Operation {
+    abstract val left: Value
+    abstract val right: Value
+
     data class Plus(
-        val left: Value,
-        val right: Value,
+        override val left: Value, override val right: Value
     ) : Operation()
 
     data class Minus(
-        val left: Value,
-        val right: Value,
+        override val left: Value, override val right: Value
     ) : Operation()
 
     data class Multiply(
-        val left: Value,
-        val right: Value,
+        override val left: Value,
+        override val right: Value,
     ) : Operation()
 
     data class Divide(
-        val left: Value,
-        val right: Value,
+        override val left: Value,
+        override val right: Value,
     ) : Operation()
 }

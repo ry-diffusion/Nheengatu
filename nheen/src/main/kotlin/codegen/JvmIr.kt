@@ -14,14 +14,14 @@ sealed class JvmIr {
     ) : JvmIr()
 
     data class InvokeSpecial(
-        val className: Class<*>,
+        val className: String,
         val methodName: String,
         val prototype: String,
         val arguments: List<JvmIr>
     ) : JvmIr()
 
     data class InvokeVirtual(
-        val className: Class<*>,
+        val className: String,
         val methodName: String,
         val prototype: String,
         val arguments: List<JvmIr>
