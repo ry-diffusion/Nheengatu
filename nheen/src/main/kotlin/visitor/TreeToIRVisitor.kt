@@ -64,14 +64,13 @@ class TreeToIRVisitor : NheenBaseVisitor<Unit>() {
 
     fun parseOperation(ctx: NheenParser.OperatorChainContext?): Operation {
         val left = convertValue(ctx!!.value(0))
-
         var lastOperation: Operation? = null
-        ctx.operator().forEachIndexed { index, op ->
 
+        ctx.operator().forEachIndexed { index, op ->
             val operator = op.text
             val operand = convertValue(ctx.value(index + 1))
 
-            val op = when (operator) {
+            val operation = when (operator) {
                 "+" -> Operation.Plus(left, operand)
                 "-" -> Operation.Minus(left, operand)
                 "*" -> Operation.Multiply(left, operand)
@@ -91,7 +90,7 @@ class TreeToIRVisitor : NheenBaseVisitor<Unit>() {
                     else -> throw Error("Operação não suportada: $operator")
                 }
             } else {
-                lastOperation = op
+                lastOperation = operation
             }
         }
 

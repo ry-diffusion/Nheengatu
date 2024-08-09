@@ -143,6 +143,19 @@ class JvmCodeGen(private val packageName: String) {
                     src += methodIdx
                 }
 
+                is JvmIr.InvokeVirtual -> {
+                    val klass = constPool.addClassInfo(it.className.name)
+                    src += Opcode.INVOKEVIRTUAL
+                    val methodIdx = constPool.addMethodrefInfo(
+                        klass,
+                        it.methodName,
+                        it.prototype
+                    )
+                    src += (methodIdx shr 8)
+                    src += methodIdx
+                }
+
+
                 is JvmIr.NewObject -> {
                     val info = constPool.addClassInfo(it.classRef.name)
                     src += Opcode.NEW

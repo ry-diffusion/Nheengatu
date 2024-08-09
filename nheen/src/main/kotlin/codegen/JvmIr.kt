@@ -20,6 +20,13 @@ sealed class JvmIr {
         val arguments: List<JvmIr>
     ) : JvmIr()
 
+    data class InvokeVirtual(
+        val className: Class<*>,
+        val methodName: String,
+        val prototype: String,
+        val arguments: List<JvmIr>
+    ) : JvmIr()
+
     data class StoreReference(
         val variableIdx: Int
     ) : JvmIr()

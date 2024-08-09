@@ -2,6 +2,7 @@ package me.ryster.nheen.codegen
 
 import me.ryster.nheen.ir.Instruction
 import me.ryster.nheen.ir.Literal
+import me.ryster.nheen.ir.Operation
 import me.ryster.nheen.ir.Value
 import me.ryster.nheen.runtime.language.core.RuntimeObject
 import me.ryster.nheen.runtime.language.core.objects.InteiroObject
@@ -86,13 +87,39 @@ class JvmIrTransformer(
         }
     }
 
+    private fun transformOperation(
+        operation: Operation,
+        src: MutableList<JvmIr>
+    ) {
+        val obj = RuntimeObject::class.java.name.replace(".", "/")
+        when (operation) {
+            is Operation.Plus -> {
+                transformValue(operation.left, src)
+                transformValue(operation.right, src)
+                src += JvmIr.InvokeVirtual(
+                    RuntimeObject::class.java,
+                    "plus",
+                    "(L$obj;)L$obj;",
+                    emptyList()
+                )
+            }
+
+            is Operation.Divide -> TODO()
+            is Operation.Minus -> TODO()
+            is Operation.Multiply -> TODO()
+        }
+    }
+
+
     private fun transformValue(
         it: Value,
         src: MutableList<JvmIr>
     ) {
         when (it) {
-            is Value.OperationChain ->
-                TODO("$it")
+            is Value.OperationChain -> {
+                transformOperation(it.operation, src)
+            }
+
             is Value.Raw -> {
                 transformLiteral(it.literal, src)
             }
