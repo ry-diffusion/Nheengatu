@@ -39,7 +39,24 @@ expr
     | texto
     | variableReference
     | functionCall
+    | binaryOperationChain
     ;
+
+binaryOperationChain
+    : simpleExpr (op simpleExpr)*
+    ;
+
+simpleExpr
+    : numero
+    | texto
+    | variableReference
+    | functionCall
+    ;
+
+op
+    : '+' | '-' | '*' | '/' | '==' | '!=' | '<' | '<=' | '>' | '>='
+    ;
+
 
 functionCall
     : Identifier '(' (expr (',' expr)*)? ')'

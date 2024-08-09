@@ -6,7 +6,7 @@ import me.ryster.nheen.codegen.JvmCodeGen
 import me.ryster.nheen.codegen.JvmIrTransformer
 import me.ryster.nheen.runtime.NheenClassLoader
 import me.ryster.nheen.runtime.language.io.Console
-import me.ryster.nheen.transformers.TreeToIRTransformer
+import me.ryster.nheen.visitor.TreeToIRVisitor
 import java.io.File
 
 fun main() {
@@ -17,11 +17,8 @@ fun main() {
          pacote Principal
          
          inicio
-            imprima("Digite um inteiro: ")
-            b := lerInteiro()
-            
-            imprima("você escreveu: ")
-            imprima(b)
+            y := 2 
+            imprima(y)
          fim
         """.trimIndent()
     )
@@ -30,10 +27,10 @@ fun main() {
         source.text
     )
 
-    val irTransformer = TreeToIRTransformer()
-    irTransformer.transformTree(source)
+    val visitor = TreeToIRVisitor()
+    visitor.visit(source)
 
-    val principal = irTransformer.packages["Principal"]!!
+    val principal = visitor.getInstructions()
 
     println("=== REPRESENTAÇÃO INTERMEDIARIA ==")
     for (inst in principal) {
