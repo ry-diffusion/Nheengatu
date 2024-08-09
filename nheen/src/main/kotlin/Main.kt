@@ -17,11 +17,16 @@ fun main() {
          pacote Principal
          
          inicio
-            texto: Texto = "Olá mundo!" 
-            int: Inteiro = 69420
+            a := "Olá mundo!" 
+            b := 2
+            b := a
+            a := 5
+            a := b
             
-            imprima(texto)
-            imprima(int)
+            imprima("==== O valor de a === ")
+            imprima(a)
+            imprima("==== O valor de b === ")
+            imprima(b)
          fim
         """.trimIndent()
     )

@@ -106,23 +106,27 @@ class TreeToIRTransformer {
         ir: Ir
     ) {
         val name = child.Identifier().text
-        val type = child.tipo().text
         val value = child.expr()
         when (value.getChild(0)) {
             is NheenParser.NumeroContext -> {
                 println(" --> Processando declaração: (NUMERO) $name = ${value.text}")
-                ir += Instruction.Assign(name, Inteiro(value.text.toInt()))
+                ir += Instruction.Assign(name, Value.Raw(Inteiro(value.text.toInt())))
             }
 
             is NheenParser.TextoContext -> {
                 var text = value.text
                 text = text.substring(1, text.length - 1)
                 println(" --> Processando declaração: (TEXTO) $name = $text")
-                ir += Instruction.Assign(name, Texto(text))
+                ir += Instruction.Assign(name, Value.Raw(Texto(text)))
+            }
+
+            is NheenParser.VariableReferenceContext -> {
+                println(" --> Processando declaração: (VARIAVEL) $name = ${value.text}")
+                ir += Instruction.Assign(name, Value.Variable(value.text))
             }
 
             else -> {
-                throw Error("(DECLARAÇÃO NÃO SUPORTADA!) $type $name = ${value.text}")
+                throw Error("(DECLARAÇÃO NÃO SUPORTADA!) $name = ${value.text}")
             }
         }
     }

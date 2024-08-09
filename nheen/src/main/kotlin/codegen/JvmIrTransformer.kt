@@ -30,7 +30,16 @@ class JvmIrTransformer(
                     }
 
 
-                    transformLiteral(instruction.value, src)
+                    when (val value = instruction.value) {
+                        is Value.Raw -> {
+                            transformLiteral(value.literal, src)
+                        }
+
+                        is Value.Variable -> {
+                            val id = variables[value.name]!!
+                            src += JvmIr.LoadReference(id)
+                        }
+                    }
 
                     src += JvmIr.StoreReference(id)
 

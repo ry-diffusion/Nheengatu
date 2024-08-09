@@ -4,7 +4,7 @@ grammar Nheen;
 pacote Principal
 
 inicio
-    x: Inteiro = 2
+    x := 2
     imprima("olá mundo!")
 fim
 **/
@@ -31,13 +31,7 @@ statement
     ;
 
 decl
-    : Identifier ':' tipo '=' expr
-    ;
-
-tipo
-    : 'Inteiro'
-    | 'Texto'
-    | 'Real'
+    : Identifier ':=' expr
     ;
 
 expr
