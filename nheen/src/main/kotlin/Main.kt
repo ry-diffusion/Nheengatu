@@ -9,6 +9,7 @@ import me.ryster.nheen.runtime.NheenClassLoader
 import me.ryster.nheen.runtime.language.io.Console
 import me.ryster.nheen.visitor.TreeToIRVisitor
 import java.io.File
+import java.lang.reflect.Constructor
 
 fun main() {
     Console.setIO(SimpleConsoleIO())
@@ -62,6 +63,8 @@ fun main() {
 
 
     val principalClass = nheenClassLoader.loadClass("nheen.code.Principal", bytes)
-    principalClass.getDeclaredMethod("inicio").invoke(principalClass.newInstance())
+    val instance = principalClass.getDeclaredConstructor().newInstance()
+    val inicio = principalClass.getDeclaredMethod("inicio")
 
+    inicio.invoke(instance)
 }
