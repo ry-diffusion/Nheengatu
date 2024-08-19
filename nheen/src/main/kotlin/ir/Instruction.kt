@@ -12,6 +12,12 @@ sealed class Instruction {
         val arguments: List<Value>,
     ) : Instruction()
 
+    data class IfStmt(
+        val condition: Value,
+        val thenBlock: List<Instruction>,
+        val elseBlock: List<Instruction>,
+    ) : Instruction()
+
 
     data object ReturnVoid : Instruction()
 }

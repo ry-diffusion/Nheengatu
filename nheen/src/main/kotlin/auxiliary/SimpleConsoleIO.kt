@@ -4,7 +4,7 @@ import me.ryster.nheen.runtime.core.ConsoleIO
 
 class SimpleConsoleIO: ConsoleIO() {
     override fun writeText(texto: String) {
-        println(texto)
+        print(texto)
     }
 
     override fun readText(): String {

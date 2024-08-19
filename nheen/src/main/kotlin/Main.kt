@@ -19,12 +19,14 @@ fun main() {
          pacote Principal
          
          inicio
-            x := 5 + (10 * 2) / 2
-            imprima("O valor de x é: " + x)
+            escreva("Digite um número: ")
+            n := lerInteiro()  
             
-            imprima("*")
-            imprima("*"*2)
-            imprima("*"*10)
+            se n > 2 então 
+               imprima("Esse número é maior que dois!")
+             senão
+               imprima("Esse número é menor que dois!")
+            fim
          fim
         """.trimIndent()
     )
@@ -57,7 +59,7 @@ fun main() {
     val nheenClassLoader = NheenClassLoader()
 
     val f = File("test.class")
-    val bytes = principalJavaRepr.toBytecode()
+    val bytes = principalJavaRepr
     f.writeBytes(bytes)
     println("Escrito em: ${f.absolutePath}")
 

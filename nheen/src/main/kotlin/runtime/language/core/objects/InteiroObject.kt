@@ -11,11 +11,19 @@ class InteiroObject(val value: Int) : RuntimeObject() {
     override val id = "Inteiro"
 
     override fun plus(other: RuntimeObject): RuntimeObject {
-        if (other !is InteiroObject) {
-            throw UnsupportedOperation()
-        }
+        return when (other) {
+            is InteiroObject -> {
+                InteiroObject(value + other.value)
+            }
 
-        return InteiroObject(value + other.value)
+            is TextoObject -> {
+                TextoObject(value.toString() + other.value)
+            }
+
+            else -> {
+                throw UnsupportedOperation()
+            }
+        }
     }
 
     override fun minus(other: RuntimeObject): RuntimeObject {
@@ -26,6 +34,7 @@ class InteiroObject(val value: Int) : RuntimeObject() {
         return InteiroObject(value - other.value)
     }
 
+    override fun toBoolean(): Boolean = value != 0
 
     override fun times(other: RuntimeObject): RuntimeObject {
         if (other !is InteiroObject) {
@@ -71,43 +80,35 @@ class InteiroObject(val value: Int) : RuntimeObject() {
         return InteiroObject(value.inv())
     }
 
-    override fun eq(other: RuntimeObject): Boolean {
+    override fun greaterThanOrEqual(other: RuntimeObject): RuntimeObject {
         if (other !is InteiroObject) {
-            return false
+            return LogicoObject(false)
         }
 
-        return value == other.value
+        return LogicoObject(value >= other.value)
     }
 
-    override fun lessThan(other: RuntimeObject): Boolean {
+    override fun eq(other: RuntimeObject): RuntimeObject {
         if (other !is InteiroObject) {
-            return false
+            return LogicoObject(false)
         }
 
-        return value < other.value
+        return LogicoObject(value == other.value)
     }
 
-    override fun greaterThan(other: RuntimeObject): Boolean {
+    override fun greaterThan(other: RuntimeObject): RuntimeObject {
         if (other !is InteiroObject) {
-            return false
+            return LogicoObject(false)
         }
 
-        return value > other.value
+        return LogicoObject(value >= other.value)
     }
 
-    override fun lessThanOrEqual(other: RuntimeObject): Boolean {
+    override fun lessThan(other: RuntimeObject): RuntimeObject {
         if (other !is InteiroObject) {
-            return false
+            return LogicoObject(false)
         }
 
-        return value <= other.value
-    }
-
-    override fun greaterThanOrEqual(other: RuntimeObject): Boolean {
-        if (other !is InteiroObject) {
-            return false
-        }
-
-        return value >= other.value
+        return LogicoObject(value < other.value)
     }
 }

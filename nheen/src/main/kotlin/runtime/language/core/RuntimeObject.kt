@@ -38,27 +38,30 @@ abstract class RuntimeObject {
 
     open fun not(): RuntimeObject {
         throw UnsupportedOperation()
-
     }
 
-    open fun eq(other: RuntimeObject): Boolean {
+    open fun eq(other: RuntimeObject): RuntimeObject {
         throw UnsupportedOperation()
     }
 
-    open fun lessThan(other: RuntimeObject): Boolean {
+    open fun lessThan(other: RuntimeObject): RuntimeObject {
         throw UnsupportedOperation()
     }
 
-    open fun greaterThan(other: RuntimeObject): Boolean {
+    open fun greaterThan(other: RuntimeObject): RuntimeObject {
         throw UnsupportedOperation()
     }
 
-    open fun lessThanOrEqual(other: RuntimeObject): Boolean {
+    open fun lessThanOrEqual(other: RuntimeObject): RuntimeObject {
         throw UnsupportedOperation()
     }
 
 
-    open fun greaterThanOrEqual(other: RuntimeObject): Boolean {
+    open fun greaterThanOrEqual(other: RuntimeObject): RuntimeObject {
+        throw UnsupportedOperation()
+    }
+
+    open fun toBoolean(): Boolean {
         throw UnsupportedOperation()
     }
 }

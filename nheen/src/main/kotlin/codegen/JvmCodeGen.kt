@@ -1,247 +1,162 @@
 package me.ryster.nheen.codegen
 
-import javassist.ClassPool
-import javassist.CtClass
-import javassist.CtNewMethod
-import javassist.bytecode.CodeAttribute
-import javassist.bytecode.ConstPool
-import javassist.bytecode.Opcode
-import me.ryster.nheen.ir.Instruction
-import me.ryster.nheen.runtime.language.core.objects.InteiroObject
-import me.ryster.nheen.runtime.language.core.objects.TextoObject
-import me.ryster.nheen.runtime.language.io.Console
+import me.ryster.nheen.runtime.language.core.RuntimeObject
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Label
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Type
 
-class JvmCodeGen(private val packageName: String) {
-    private val pool = ClassPool.getDefault()
-    private val variableMap = mutableMapOf<String, Int>()
-    private var currentLocalIdx = 1
 
-//
-//    private fun transformIrToByteCode(
-//        ir: List<Instruction>, constPool: ConstPool
-//    ): ByteArray {
-//        val src = mutableListOf<Int>()
-//
-//        ir.forEach { instruction ->
-//            when (instruction) {
-//                is Instruction.Assign -> {
-//                    when (val newItem = instruction.value) {
-//                        is Instruction.Literal.Inteiro -> {
-//                            src += CodeAttribute.LDC
-//                            src += constPool.addIntegerInfo(newItem.value)
-//
-//                            src += CodeAttribute.ISTORE
-//                            src += currentLocalIdx
-//                            variableMap[instruction.variable] = currentLocalIdx++
-//                        }
-//
-//                        is Instruction.Literal.Texto -> {
-//                            src += CodeAttribute.LDC
-//                            src += constPool.addStringInfo(newItem.value)
-//
-//                            src += CodeAttribute.ASTORE
-//                            src += currentLocalIdx
-//                            variableMap[instruction.variable] = currentLocalIdx++
-//                        }
-//                    }
-//                }
-//
-//                is Instruction.Call -> {
-//                    // me.ryster.nheen.runtime.language
-//                    val console = constPool.addClassInfo("me/ryster/nheen/runtime/language/Console");
-//                    val methodIdx = constPool.addMethodrefInfo(
-//                        console,
-//                        instruction.function,
-//                        "(Ljava/lang/String;)V"
-//                    )
-//
-//
-//                    src += Opcode.INVOKESTATIC
-//                    src += (methodIdx shr 8)
-//                    src += methodIdx
-//                }
-//
-//                is Instruction.PushValue -> {
-//                    when (val value = instruction.value) {
-//                        is Instruction.Literal.Inteiro -> {
-//                            src += CodeAttribute.LDC
-//                            src += constPool.addIntegerInfo(value.value)
-//                        }
-//
-//                        is Instruction.Literal.Texto -> {
-//                            src += CodeAttribute.LDC
-//                            src += constPool.addStringInfo(value.value)
-//                        }
-//                    }
-//                }
-//
-//                is Instruction.PushVariable -> {
-//                    val idx = variableMap[instruction.variable]!!
-//                    src += CodeAttribute.ALOAD
-//                    src += idx
-//                }
-//
-//                Instruction.ReturnVoid -> {
-//                    src += CodeAttribute.RETURN
-//                }
-//            }
-//        }
-//
-//        return src.map {
-//            it.toByte()
-//        }.toByteArray();
-//    }
-//
-//
-//    fun transformFromIR(ir: List<Instruction>, className: String): CtClass {
-//        val klass = pool.makeClass("$packageName.$className")
-//
-//        val main = CtNewMethod.make(
-//            CtClass.voidType, "inicio",
-//            arrayOf(), null, null, klass
-//        )
-//
-//        val methodInfo = main.methodInfo
-//        val constPool = methodInfo.constPool
-//        val src = transformIrToByteCode(ir, constPool)
-//
-//
-//        methodInfo.setSuperclass("java/lang/Object")
-//        constPool.classNames.add("java/lang/Object")
-//        constPool.classNames.add("me/ryster/nheen/runtime/language/Console")
-//
-//        val codeAttr = CodeAttribute(
-//            constPool, 4096 * 2, currentLocalIdx,
-//            src, methodInfo.codeAttribute.exceptionTable
-//        )
-//
-//
-//        main.methodInfo.setCodeAttribute(codeAttr)
-//
-//        klass.addMethod(main)
-//
-//        return klass
-//    }
+class JvmCodeGen(private val packageName: String) : Opcodes {
+    private val labels = mutableMapOf<String, Label>()
+
+    private fun addDefaultConstructor(classWriter: ClassWriter) {
+        // Create a public constructor <init>()
+        val constructorVisitor = classWriter.visitMethod(
+            Opcodes.ACC_PUBLIC, // Access modifier: public
+            "<init>",           // Constructor name
+            "()V",              // Descriptor: no arguments, void return type
+            null,               // Signature: null for a simple constructor
+            null                // Exceptions: null if no exceptions are thrown
+        )
+
+        constructorVisitor.visitCode()
+
+        // Call the superclass constructor (e.g., java.lang.Object.<init>())
+        constructorVisitor.visitVarInsn(Opcodes.ALOAD, 0) // Load "this" onto the stack
+        constructorVisitor.visitMethodInsn(
+            Opcodes.INVOKESPECIAL,   // Invoke special method (constructor)
+            "java/lang/Object",      // Superclass name (Object)
+            "<init>",                // Constructor name
+            "()V",                   // Descriptor of the superclass constructor
+            false                    // Is it an interface method? No.
+        )
+
+        // End the constructor with a return statement
+        constructorVisitor.visitInsn(Opcodes.RETURN)
+
+        // Specify the maximum stack and local variables
+        constructorVisitor.visitMaxs(1, 1)
+
+        // End the method
+        constructorVisitor.visitEnd()
+    }
 
     private fun transformIrToByteCode(
-        ir: List<JvmIr>, constPool: ConstPool
-    ): ByteArray {
-        val src = mutableListOf<Int>();
-
+        ir: List<JvmIr>, mv: MethodVisitor
+    ) {
         ir.forEach {
             when (it) {
                 is JvmIr.InvokeSpecial -> {
-                    val klass = constPool.addClassInfo(it.className)
-                    src += Opcode.INVOKESPECIAL
-                    val methodIdx = constPool.addMethodrefInfo(
-                        klass,
+                    mv.visitMethodInsn(
+                        Opcodes.INVOKESPECIAL,
+                        it.className.replace('.', '/'),
                         it.methodName,
-                        it.prototype
+                        it.prototype,
+                        false
                     )
+                }
 
-                    src += (methodIdx shr 8)
-                    src += methodIdx
+                is JvmIr.Goto -> {
+                    mv.visitJumpInsn(Opcodes.GOTO, labels[it.label])
                 }
 
                 is JvmIr.InvokeVirtual -> {
-                    val klass = constPool.addClassInfo(it.className)
-                    src += Opcode.INVOKEVIRTUAL
-                    val methodIdx = constPool.addMethodrefInfo(
-                        klass,
+                    mv.visitMethodInsn(
+                        Opcodes.INVOKEVIRTUAL,
+                        it.className.replace('.', '/'),
                         it.methodName,
-                        it.prototype
+                        it.prototype,
+                        false
                     )
-                    src += (methodIdx shr 8)
-                    src += methodIdx
                 }
 
-
                 is JvmIr.NewObject -> {
-                    val info = constPool.addClassInfo(it.classRef.name)
-                    src += Opcode.NEW
-                    src += info shr 8
-                    src += info
-                    src += Opcode.DUP
+                    mv.visitTypeInsn(Opcodes.NEW, it.classRef.name.replace('.', '/'))
+                    mv.visitInsn(Opcodes.DUP)
                 }
 
                 is JvmIr.PushInt -> {
-                    src += Opcode.LDC
-                    src += constPool.addIntegerInfo(it.value)
+                    mv.visitLdcInsn(it.value)
                 }
 
                 is JvmIr.PushString -> {
-                    src += Opcode.LDC
-                    src += constPool.addStringInfo(it.value)
+                    mv.visitLdcInsn(it.value)
                 }
 
                 JvmIr.ReturnVoid -> {
-                    src += Opcode.RETURN
+                    mv.visitInsn(Opcodes.RETURN)
                 }
 
                 is JvmIr.StaticCall -> {
-                    val klass = constPool.addClassInfo(it.className);
-                    val methodIdx = constPool.addMethodrefInfo(
-                        klass,
+                    mv.visitMethodInsn(
+                        Opcodes.INVOKESTATIC,
+                        it.className.replace('.', '/'),
                         it.methodName,
-                        it.prototype
+                        it.prototype,
+                        false
                     )
-
-                    src += Opcode.INVOKESTATIC
-                    src += (methodIdx shr 8)
-                    src += methodIdx
                 }
 
                 is JvmIr.StoreReference -> {
-                    src += Opcode.ASTORE
-                    src += it.variableIdx
+                    mv.visitVarInsn(Opcodes.ASTORE, it.variableIdx)
                 }
 
                 is JvmIr.LoadReference -> {
-                    src += Opcode.ALOAD
-                    src += it.variableIdx
+                    mv.visitVarInsn(Opcodes.ALOAD, it.variableIdx)
+                }
+
+                is JvmIr.IfEq -> {
+                    val runtimeObject = Type.getInternalName(RuntimeObject::class.java)
+                    mv.visitMethodInsn(
+                        Opcodes.INVOKEVIRTUAL,
+                        runtimeObject,
+                        "toBoolean",
+                        "()Z",
+                        false
+                    )
+                    mv.visitJumpInsn(Opcodes.IFEQ, labels[it.otherwiseLabel])
+                    mv.visitJumpInsn(Opcodes.GOTO, labels[it.thenLabel])
+                }
+
+                is JvmIr.DeclareLabel -> {
+                    labels[it.label] = Label()
+                }
+
+                is JvmIr.BeginLabel -> {
+                    mv.visitLabel(labels[it.label])
                 }
             }
         }
 
-        return src.map {
-            it.toByte()
-        }.toByteArray();
     }
 
+    fun transform(ir: List<JvmIr>, className: String, functionName: String, countVariables: Int): ByteArray {
+        val classWriter = ClassWriter(ClassWriter.COMPUTE_FRAMES or ClassWriter.COMPUTE_MAXS)
+        val fullClassName = "$packageName/$className".replace('.', '/')
+        classWriter.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, fullClassName, null, "java/lang/Object", null)
 
-    fun transform(ir: List<JvmIr>, className: String, functionName: String, countVariables: Int): CtClass {
-        val klass = pool.makeClass("$packageName.$className")
+        // Add the default constructor
+        addDefaultConstructor(classWriter)
 
-        val main = CtNewMethod.make(
-            CtClass.voidType, functionName,
-            arrayOf(), null, null, klass
+        // Add the main method
+        val mv = classWriter.visitMethod(
+            Opcodes.ACC_PUBLIC or Opcodes.ACC_STATIC,
+            functionName,
+            "()V",
+            null,
+            null
         )
+        mv.visitCode()
 
-        val methodInfo = main.methodInfo
-        val constPool = methodInfo.constPool
-        val src = transformIrToByteCode(ir, constPool)
+        // Transform IR to Bytecode
+        transformIrToByteCode(ir, mv)
 
+        mv.visitMaxs(0, countVariables)
+        mv.visitEnd()
 
-
-        methodInfo.setSuperclass("java/lang/Object")
-        constPool.classNames.add("java/lang/Object")
-        constPool.classNames.add(Console::class.java.name)
-        constPool.classNames.add(InteiroObject::class.java.name)
-        constPool.classNames.add(TextoObject::class.java.name)
-
-
-        val codeAttr = CodeAttribute(
-            constPool, 4096 * 2, countVariables,
-            src, methodInfo.codeAttribute.exceptionTable
-        )
-
-
-        main.methodInfo.setCodeAttribute(codeAttr)
-
-        klass.addMethod(main)
-
-        return klass
+        classWriter.visitEnd()
+        return classWriter.toByteArray()
     }
-
-
 }

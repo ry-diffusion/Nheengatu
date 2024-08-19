@@ -21,4 +21,8 @@ sealed class Operation {
         override val left: Value,
         override val right: Value,
     ) : Operation()
+    data class GreaterThan(
+        override val left: Value,
+        override val right: Value,
+    ) : Operation()
 }

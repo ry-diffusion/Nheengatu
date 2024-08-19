@@ -4,10 +4,8 @@ import me.ryster.nheen.ir.Instruction
 import me.ryster.nheen.ir.Literal
 import me.ryster.nheen.ir.Operation
 import me.ryster.nheen.ir.Value
-import me.ryster.nheen.runtime.language.core.RuntimeObject
 import me.ryster.nheen.runtime.language.core.objects.InteiroObject
 import me.ryster.nheen.runtime.language.core.objects.TextoObject
-import me.ryster.nheen.runtime.language.io.Console
 
 class JvmIrTransformer(
     private val callResolver: JvmCallResolver,
@@ -22,6 +20,14 @@ class JvmIrTransformer(
     fun doTransform(): List<JvmIr> {
         val src = mutableListOf<JvmIr>()
 
+        transformInstructions(ir, src)
+
+        return src
+    }
+
+    private fun transformInstructions(
+        ir: List<Instruction>, src: MutableList<JvmIr>
+    ) {
         for (instruction in ir) {
             when (instruction) {
                 is Instruction.Assign -> {
@@ -38,13 +44,42 @@ class JvmIrTransformer(
                     transformCall(instruction, src)
                 }
 
+                is Instruction.IfStmt -> {
+                    transformIfStmt(instruction, src)
+                }
+
                 Instruction.ReturnVoid -> {
                     src += JvmIr.ReturnVoid
                 }
             }
         }
+    }
 
-        return src
+
+    private fun transformIfStmt(
+        instruction: Instruction.IfStmt,
+        src: MutableList<JvmIr>
+    ) {
+        val elseLabel = "else_${System.currentTimeMillis()}"
+        val endLabel = "end_${System.currentTimeMillis()}"
+        val thenLabel = "then_${System.currentTimeMillis()}"
+
+        src += JvmIr.DeclareLabel(elseLabel)
+        src += JvmIr.DeclareLabel(endLabel)
+        src += JvmIr.DeclareLabel(thenLabel)
+
+        transformValue(instruction.condition, src)
+
+        src += JvmIr.IfEq(thenLabel, elseLabel)
+
+        src += JvmIr.BeginLabel(thenLabel)
+        transformInstructions(instruction.thenBlock, src)
+        src += JvmIr.Goto(endLabel)
+
+        src += JvmIr.BeginLabel(elseLabel)
+        transformInstructions(instruction.elseBlock, src)
+
+        src += JvmIr.BeginLabel(endLabel)
     }
 
     private fun transformCall(

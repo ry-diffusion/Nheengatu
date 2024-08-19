@@ -13,6 +13,10 @@ sealed class JvmIr {
         val value: String
     ) : JvmIr()
 
+    data class Goto(
+        val label: String
+    ) : JvmIr()
+
     data class InvokeSpecial(
         val className: String,
         val methodName: String,
@@ -40,6 +44,19 @@ sealed class JvmIr {
         val methodName: String,
         val prototype: String,
         val arguments: List<JvmIr>
+    ) : JvmIr()
+
+    data class IfEq(
+        val thenLabel: String,
+        val otherwiseLabel: String
+    ) : JvmIr()
+
+    data class DeclareLabel (
+        val label: String
+    ) : JvmIr()
+
+    data class BeginLabel (
+        val label: String
     ) : JvmIr()
 
     data object ReturnVoid : JvmIr()

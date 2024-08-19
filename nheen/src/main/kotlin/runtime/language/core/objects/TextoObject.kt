@@ -22,11 +22,11 @@ class TextoObject(val value: String) : RuntimeObject() {
         return TextoObject(value.repeat(other.value))
     }
 
-    override fun eq(other: RuntimeObject): Boolean {
+    override fun eq(other: RuntimeObject): RuntimeObject {
         if (other !is TextoObject) {
-            return false
+            return LogicoObject(false)
         }
 
-        return value == other.value
+        return LogicoObject(value == other.value)
     }
 }

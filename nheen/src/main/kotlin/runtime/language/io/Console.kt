@@ -16,6 +16,11 @@ class Console {
 
         @JvmStatic
         fun imprima(texto: RuntimeObject) {
+            consoleIO.writeText("${texto.representation()}\n")
+        }
+
+        @JvmStatic
+        fun escreva(texto: RuntimeObject) {
             consoleIO.writeText(texto.representation())
         }
 

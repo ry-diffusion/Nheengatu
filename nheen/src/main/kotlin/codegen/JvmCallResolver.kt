@@ -2,6 +2,7 @@ package me.ryster.nheen.codegen
 
 import me.ryster.nheen.ir.Operation
 import me.ryster.nheen.runtime.language.core.RuntimeObject
+import me.ryster.nheen.runtime.language.core.objects.LogicoObject
 import me.ryster.nheen.runtime.language.io.Console
 import me.ryster.nheen.transformers.CallResolver
 import java.lang.reflect.Method
@@ -32,14 +33,26 @@ fun getMethodSignature(method: Method): String {
 class JvmCallResolver
     (val packageName: String) : CallResolver() {
     class PreludeFunction(
-        val className: Class<*>, val methodName: String, val protoArgs: List<Class<*>> = emptyList()
+        val className: Class<*>, val methodName: String, protoArgs: List<Class<*>> = emptyList()
     ) {
         val prototype: String = getMethodSignature(className.getMethod(methodName, *protoArgs.toTypedArray()))
     }
 
     private val preludeFunctionMapping = mapOf(
+        "verdadeiro" to PreludeFunction(
+            LogicoObject::class.java, "runtimeTrue", listOf()
+        ),
+
+        "falso" to PreludeFunction(
+            LogicoObject::class.java, "runtimeFalse", listOf()
+        ),
+
         "imprima" to PreludeFunction(
             Console::class.java, "imprima", listOf(RuntimeObject::class.java)
+        ),
+
+        "escreva" to PreludeFunction(
+            Console::class.java, "escreva", listOf(RuntimeObject::class.java)
         ),
 
         "lerInteiro" to PreludeFunction(
@@ -47,7 +60,12 @@ class JvmCallResolver
         )
     )
 
-    val operationsPreludeMapping = mapOf(
+    private val operationsPreludeMapping = mapOf(
+        Operation.GreaterThan::class to PreludeFunction(
+            RuntimeObject::class.java, "greaterThan",
+            listOf(RuntimeObject::class.java)
+        ),
+
         Operation.Plus::class to PreludeFunction(
             RuntimeObject::class.java, "plus",
 
@@ -77,7 +95,7 @@ class JvmCallResolver
             )
         }
 
-        TODO("Função não implementada! ${name}")
+        TODO("Função não implementada! $name")
     }
 
 

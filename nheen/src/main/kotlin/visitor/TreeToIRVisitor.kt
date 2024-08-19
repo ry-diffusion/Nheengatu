@@ -30,6 +30,33 @@ class TreeToIRVisitor : NheenBaseVisitor<Unit>() {
         }
     }
 
+    override fun visitSe(ctx: NheenParser.SeContext?) {
+        val condition = ctx!!.expr()
+        val block = ctx.statements()
+        println(" --> Processando bloco SE")
+        val startedIdx = ir.size
+        visit(block)
+        val endIdx = ir.size
+        val thenInstruction = ir.subList(startedIdx, endIdx).toList()
+        ir.removeAll(thenInstruction)
+
+        var otherwise = listOf<Instruction>()
+
+        if (ctx.senão() != null) {
+            val elseBlock = ctx.senão().statements()
+            println(" --> Processando bloco SENAO")
+            visit(elseBlock)
+            val elseStartedIdx = ir.size
+            visit(elseBlock)
+            val elseEndIdx = ir.size
+            otherwise = ir.subList(elseStartedIdx, elseEndIdx).toList()
+            ir.removeAll(otherwise)
+        }
+
+
+        ir += Instruction.IfStmt(parseValue(condition), thenInstruction, otherwise)
+    }
+
     override fun visitDecl(ctx: NheenParser.DeclContext) {
         val name = ctx.Identifier().text
         val value = ctx.expr()
@@ -104,6 +131,7 @@ class TreeToIRVisitor : NheenBaseVisitor<Unit>() {
                         "-" -> Operation.Minus(left, right)
                         "*" -> Operation.Multiply(left, right)
                         "/" -> Operation.Divide(left, right)
+                        ">" -> Operation.GreaterThan(left, right)
                         else -> throw Error("Unsupported Operation: $token")
                     }
                     stack.add(Value.OperationChain(operation))
@@ -126,6 +154,16 @@ class TreeToIRVisitor : NheenBaseVisitor<Unit>() {
         is NheenParser.ExpressionParenContext -> parseValue(valueChild.expr())
         is NheenParser.OperatorChainContext ->
             Value.OperationChain(parseOperation(valueChild))
+
+        is NheenParser.FunctionCallContext -> {
+            visitFunctionCall(valueChild)
+            val lastIr = ir.removeLast()
+            if (lastIr !is Instruction.Call) {
+                throw Error("Última instrução não é uma chamada de função")
+            }
+
+            Value.FunctionCall(lastIr)
+        }
 
         else -> throw Error("Tipo de valor não suportado: ${valueChild::class}")
     }

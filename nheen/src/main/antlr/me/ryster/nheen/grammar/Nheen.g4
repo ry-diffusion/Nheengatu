@@ -18,6 +18,15 @@ inicio
     : 'inicio' statements 'fim'
     ;
 
+se
+    : 'se' expr 'então' statements  'fim'
+    | 'se' expr 'então' statements senão 'fim'
+    ;
+
+senão
+    : 'senão' statements
+    ;
+
 pacote
     : 'pacote' Identifier
     ;
@@ -27,7 +36,7 @@ statements
     ;
 
 statement
-    : decl | expr
+    : decl | expr | se
     ;
 
 decl
